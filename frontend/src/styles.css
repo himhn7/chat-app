@@ -320,16 +320,58 @@ textarea {
   font-weight: 700;
 }
 
-.file-upload input {
-  width: min(260px, 100%);
+.file-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 0.34rem;
+  width: min(360px, 100%);
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0.38rem 0.72rem;
+  border-radius: 9px;
+  background: #e7f4ef;
+  color: #105b46;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.file-trigger:hover {
+  background: #d9eee7;
+}
+
+.file-name {
+  color: var(--muted);
+  font-size: 0.8rem;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .file-upload small {
   display: block;
-  max-width: 260px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 button {
@@ -381,9 +423,7 @@ button:disabled {
     align-items: stretch;
   }
 
-  .file-upload input,
-  .file-upload small {
-    max-width: 100%;
+  .file-input-row {
     width: 100%;
   }
 }

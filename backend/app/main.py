@@ -45,6 +45,14 @@ def build_prompt(user_prompt: str, file_context: str) -> str:
     )
 
 
+def _is_image_upload(file: UploadFile) -> bool:
+    content_type = (file.content_type or "").lower()
+    lower_name = (file.filename or "").lower()
+    if content_type.startswith("image/"):
+        return True
+    return lower_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"))
+
+
 @app.post("/api/chat")
 async def chat(
     prompt: str = Form(default=""),
@@ -57,10 +65,19 @@ async def chat(
     settings = get_settings()
 
     file_context = ""
+    image_bytes: bytes | None = None
+    image_mime_type: str | None = None
+
     if file is not None:
-        extracted_text = await extract_uploaded_file(file, settings)
-        if extracted_text.strip():
-            file_context = f"File '{file.filename}' content:\n{extracted_text}\n"
+        if _is_image_upload(file):
+            image_bytes = await file.read()
+            image_mime_type = file.content_type or "image/jpeg"
+            if not image_bytes:
+                raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+        else:
+            extracted_text = await extract_uploaded_file(file, settings)
+            if extracted_text.strip():
+                file_context = f"File '{file.filename}' content:\n{extracted_text}\n"
 
     full_prompt = build_prompt(prompt, file_context)
 
@@ -69,6 +86,8 @@ async def chat(
             prompt=full_prompt,
             temperature=temperature,
             settings=settings,
+            image_bytes=image_bytes,
+            image_mime_type=image_mime_type,
         ):
             yield chunk
 

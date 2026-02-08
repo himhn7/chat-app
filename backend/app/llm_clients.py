@@ -1,4 +1,5 @@
 import asyncio
+import base64
 from typing import AsyncGenerator
 
 from fastapi import HTTPException
@@ -11,13 +12,17 @@ async def stream_chat(
     prompt: str,
     temperature: float,
     settings: Settings,
+    image_bytes: bytes | None = None,
+    image_mime_type: str | None = None,
 ) -> AsyncGenerator[str, None]:
     if settings.mock_llm:
         async for chunk in _stream_mock(prompt):
             yield chunk
         return
 
-    async for chunk in _stream_xai(prompt, temperature, settings):
+    async for chunk in _stream_xai(
+        prompt, temperature, settings, image_bytes=image_bytes, image_mime_type=image_mime_type
+    ):
         yield chunk
 
 
@@ -33,7 +38,11 @@ async def _stream_mock(prompt: str) -> AsyncGenerator[str, None]:
 
 
 async def _stream_xai(
-    prompt: str, temperature: float, settings: Settings
+    prompt: str,
+    temperature: float,
+    settings: Settings,
+    image_bytes: bytes | None = None,
+    image_mime_type: str | None = None,
 ) -> AsyncGenerator[str, None]:
     if not settings.xai_api_key:
         raise HTTPException(status_code=500, detail="Missing XAI_API_KEY")
@@ -47,9 +56,21 @@ async def _stream_xai(
         ) from exc
 
     client = AsyncOpenAI(api_key=settings.xai_api_key, base_url=settings.xai_base_url)
+    user_content: list[dict] | str
+    if image_bytes:
+        encoded = base64.b64encode(image_bytes).decode("utf-8")
+        mime_type = image_mime_type or "image/jpeg"
+        data_url = f"data:{mime_type};base64,{encoded}"
+        user_content = [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": data_url}},
+        ]
+    else:
+        user_content = prompt
+
     stream = await client.chat.completions.create(
         model=settings.xai_model,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[{"role": "user", "content": user_content}],
         temperature=temperature,
         stream=True,
     )
