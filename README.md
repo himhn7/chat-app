@@ -88,6 +88,14 @@ cd ..
 
 ## Run
 
+Start everything (extractor + API + frontend) in one step:
+
+```powershell
+.\start-dev.cmd
+```
+
+Or run services individually:
+
 Run extractor microservice:
 
 ```powershell
